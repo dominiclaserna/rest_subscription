@@ -1,26 +1,48 @@
-REST Subscription API
+Subscription API
+A simple REST API built with Flask and Flask-RESTX for managing:
 
-Activity Summary
-Objective: Create a RESTful API using Python Flask that handles subscription-based logic for business products. This includes CRUD operations for both Products and Subscriptions.
+**Users**
+**Products**
+**Subscriptions**
 
-API Responsibilities
+Data is stored in SQLite.
 
-Product
+------------------------------------------------------------
+API Endpoints
+**Users**
+POST /api/v1/users
+Create a new user
 
-POST /products – Add a new product
+GET /api/v1/users
+List all users
 
-GET /products – View all available products
+GET /api/v1/users/<id>
+Get user by ID
 
-Subscription
+PUT /api/v1/users/<id>
+Update user
 
-POST /subscriptions – Record a new user subscription
+PUT /api/v1/users/<id>
+Update user
+------------------------------------------------------------
+**Products**
+POST /api/v1/products
+Create a new product
 
-PUT /subscriptions/<id> – Update/renew a subscription
+GET /api/v1/products
+List all products
+------------------------------------------------------------
+**Subscriptions**
+POST /api/v1/subscriptions
+Create a new subscription
 
-Updates status to Subscribed on renewal
+Requires valid username and product_id
 
-GET /subscriptions – View all user subscriptions
+GET /api/v1/subscriptions
+List all subscriptions
 
-DELETE /subscriptions/<id> – Unsubscribe a user
+PUT /api/v1/subscriptions/<id>
+Update subscription
 
-[View Testing Documentation](./TESTING.pdf)
+DELETE /api/v1/subscriptions/<id>
+Unsubscribe a user
