@@ -24,11 +24,11 @@ def get_duration_by_frequency(freq):
         return timedelta(days=30)
     return timedelta(days=0)
 
-@subscription_ns.route("")
+@subscription_ns.route("/")
 class SubscriptionList(Resource):
     @subscription_ns.marshal_list_with(subscription_model)
     def get(self):
-        return Subscription.query.all()
+        return [sub.to_dict() for sub in Subscription.query.all()]
 
     @subscription_ns.expect(subscription_model)
     @subscription_ns.marshal_with(subscription_model, code=201)
@@ -63,7 +63,7 @@ class SubscriptionList(Resource):
 
         db.session.add(new_sub)
         db.session.commit()
-        return new_sub, 201
+        return new_sub.to_dict(), 201 
 
 @subscription_ns.route("/<int:id>")
 class SubscriptionResource(Resource):

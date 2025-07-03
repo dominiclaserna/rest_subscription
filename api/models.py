@@ -41,10 +41,11 @@ class Subscription(db.Model):
     def to_dict(self):
         return {
             "id": self.id,
-            "user": self.user,
+            "user": self.user.username if self.user else None,
             "product_id": self.product_id,
             "status": self.status,
             "date_subscribed": self.date_subscribed.strftime("%Y-%m-%d") if self.date_subscribed else None,
             "end_date": self.end_date.strftime("%Y-%m-%d") if self.end_date else None,
             "renewed_date": self.renewed_date.strftime("%Y-%m-%d") if self.renewed_date else None,
         }
+

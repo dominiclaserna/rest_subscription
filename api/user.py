@@ -11,7 +11,7 @@ user_model = user_ns.model("User", {
     "phone": fields.String(description="User phone number"),
 })
 
-@user_ns.route("")
+@user_ns.route("/")
 class UserList(Resource):
     @user_ns.marshal_list_with(user_model)
     def get(self):
@@ -33,7 +33,7 @@ class UserList(Resource):
         )
         db.session.add(user)
         db.session.commit()
-        return user, 201
+        return user.to_dict(), 201
 
 @user_ns.route("/<int:id>")
 class UserResource(Resource):
@@ -42,7 +42,7 @@ class UserResource(Resource):
         user = User.query.get(id)
         if not user:
             abort(404, "User not found.")
-        return user
+        return user.to_dict()
 
     @user_ns.expect(user_model)
     @user_ns.marshal_with(user_model)
@@ -56,7 +56,7 @@ class UserResource(Resource):
         user.email = data.get("email", user.email)
         user.phone = data.get("phone", user.phone)
         db.session.commit()
-        return user
+        return user.to_dict()
 
     def delete(self, id):
         user = User.query.get(id)

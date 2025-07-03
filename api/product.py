@@ -11,8 +11,11 @@ product_model = product_ns.model("Product", {
     "frequency": fields.String(required=True, enum=["daily", "weekly", "monthly"]),
 })
 
-@product_ns.route("")
+@product_ns.route("/")
 class ProductList(Resource):
+    @product_ns.marshal_list_with(product_model)
+    def get(self):
+        return Product.query.all()
     @product_ns.expect(product_model)
     @product_ns.marshal_with(product_model, code=201)
     def post(self):
