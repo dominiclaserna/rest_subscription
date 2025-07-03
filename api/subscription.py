@@ -1,69 +1,104 @@
 from flask_restx import Namespace, Resource, fields, abort
+from flask import request
+from datetime import datetime, timedelta
+from .models import db, Subscription, Product, User
 
 subscription_ns = Namespace("subscriptions", description="Manage Subscriptions")
 
 subscription_model = subscription_ns.model("Subscription", {
     "id": fields.Integer(readonly=True),
-    "user": fields.String(required=True),
+    "user": fields.String(required=True, description="Username, phone, or email"),
     "product_id": fields.Integer(required=True),
     "status": fields.String(required=True, enum=["Subscribed", "Unsubscribed"]),
+    "date_subscribed": fields.String(readonly=True),
+    "end_date": fields.String(readonly=True),
+    "renewed_date": fields.String(readonly=True),
 })
 
-subscriptions = []
-subscription_id_counter = 1
-
-def validate_subscription_payload(data):
-    required_fields = ["user", "product_id", "status"]
-    missing = [field for field in required_fields if field not in data or data[field] in (None, "")]
-    if missing:
-        abort(400, f"Missing or empty fields: {', '.join(missing)}")
-    if data["status"] not in ["Subscribed", "Unsubscribed"]:
-        abort(400, "Invalid status. Must be 'Subscribed' or 'Unsubscribed'")
+def get_duration_by_frequency(freq):
+    if freq == "daily":
+        return timedelta(days=1)
+    elif freq == "weekly":
+        return timedelta(weeks=1)
+    elif freq == "monthly":
+        return timedelta(days=30)
+    return timedelta(days=0)
 
 @subscription_ns.route("")
 class SubscriptionList(Resource):
     @subscription_ns.marshal_list_with(subscription_model)
     def get(self):
-        return subscriptions
+        return Subscription.query.all()
 
     @subscription_ns.expect(subscription_model)
     @subscription_ns.marshal_with(subscription_model, code=201)
     def post(self):
-        global subscription_id_counter
-        data = subscription_ns.payload
+        data = request.get_json()
 
-        validate_subscription_payload(data)
+   
+        username = data.get("username")
+        if not username:
+            abort(400, "Missing username.")
 
-        new_subscription = {
-            "id": subscription_id_counter,
-            "user": data["user"],
-            "product_id": data["product_id"],
-            "status": data["status"],
-        }
+        #Check if user exists
+        user = User.query.filter_by(username=username).first()
+        if not user:
+            abort(400, f"User '{username}' does not exist.")
 
-        subscriptions.append(new_subscription)
-        subscription_id_counter += 1
-        return new_subscription, 201
+        product = Product.query.get(data["product_id"])
+        if not product:
+            abort(400, "Product does not exist.")
+
+        duration = get_duration_by_frequency(product.frequency)
+        now = datetime.now()
+
+        new_sub = Subscription(
+            user_id=user.id,
+            product_id=data["product_id"],
+            status=data["status"],
+            date_subscribed=now,
+            end_date=(now + duration),
+            renewed_date=None
+        )
+
+        db.session.add(new_sub)
+        db.session.commit()
+        return new_sub, 201
 
 @subscription_ns.route("/<int:id>")
-class Subscription(Resource):
+class SubscriptionResource(Resource):
     @subscription_ns.expect(subscription_model)
     def put(self, id):
-        data = subscription_ns.payload
-        validate_subscription_payload(data)
+        sub = Subscription.query.get(id)
+        if not sub:
+            abort(404, "Subscription not found")
 
-        for sub in subscriptions:
-            if sub["id"] == id:
-                sub["user"] = data["user"]
-                sub["product_id"] = data["product_id"]
-                sub["status"] = data["status"]
-                return {"msg": "updated"}, 200
+        data = request.get_json()
+        for field in ["user", "product_id"]:
+            if not data.get(field):
+                abort(400, f"Missing field: {field}")
 
-        abort(404, "Subscription not found")
+        product = Product.query.get(data["product_id"])
+        if not product:
+            abort(400, "Product no longer exists")
+
+        duration = get_duration_by_frequency(product.frequency)
+        now = datetime.now()
+
+        sub.user = data["user"]
+        sub.product_id = data["product_id"]
+        sub.status = "Subscribed"
+        sub.renewed_date = now.strftime("%Y-%m-%d")
+        sub.end_date = (now + duration).strftime("%Y-%m-%d")
+
+        db.session.commit()
+        return {"msg": "updated"}, 200
 
     def delete(self, id):
-        for i, sub in enumerate(subscriptions):
-            if sub["id"] == id:
-                subscriptions.pop(i)
-                return {"msg": "unsubscribed"}, 200
-        abort(404, "Subscription not found")
+        sub = Subscription.query.get(id)
+        if not sub:
+            abort(404, "Subscription not found")
+
+        db.session.delete(sub)
+        db.session.commit()
+        return {"msg": "unsubscribed"}, 200
