@@ -23,3 +23,4 @@ GET /subscriptions – View all user subscriptions
 
 DELETE /subscriptions/<id> – Unsubscribe a user
 
+[View Testing Documentation](./TESTING.pdf)
