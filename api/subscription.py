@@ -40,7 +40,6 @@ class SubscriptionList(Resource):
         if not username:
             abort(400, "Missing username.")
 
-        #Check if user exists
         user = User.query.filter_by(username=username).first()
         if not user:
             abort(400, f"User '{username}' does not exist.")

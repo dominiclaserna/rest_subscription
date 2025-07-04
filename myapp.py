@@ -19,7 +19,7 @@ def create_app():
     api = Api(app, version="1.0", title="Subscription API", prefix="/api/v1")
     api.add_namespace(product_ns)
     api.add_namespace(subscription_ns)
-    api.add_namespace(user_ns)      # ✅ add this
+    api.add_namespace(user_ns)   
 
     with app.app_context():
         db.create_all()
