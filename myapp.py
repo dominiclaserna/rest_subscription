@@ -23,7 +23,6 @@ def create_app():
 
     with app.app_context():
         db.create_all()
-        print("✅ DB file should be created at:", db_path)
 
     @app.route("/debug/tables")
     def show_tables():
